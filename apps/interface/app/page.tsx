@@ -1,67 +1,80 @@
-import Image from "next/image";
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useSupabase } from './providers/SupabaseProvider';
 
 export default function Home() {
-  return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          NomadPi VPN Manager
-        </h2>
+  const router = useRouter();
+  const { user, isLoading } = useSupabase();
+  const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isLoading, router]);
+
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  };
+
+  const signInWithGithub = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center bg-white">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md px-6">
+          <h2 className="text-center text-2xl font-medium tracking-tight text-gray-900">
+            Welcome to NomadPi
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Loading...
+          </p>
+        </div>
       </div>
+    );
+  }
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form className="space-y-6" action="#" method="POST">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-              Email address
-            </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
-                Password
-              </label>
-            </div>
-            <div className="mt-2">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Sign in
-            </button>
-          </div>
-        </form>
-
-        <p className="mt-10 text-center text-sm text-gray-500">
-          Don't have an account?{' '}
-          <a href="#" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
-            Register here
-          </a>
+  // Show sign-in options if not authenticated
+  return (
+    <div className="min-h-screen flex flex-col justify-center bg-white">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-6">
+        <h2 className="text-center text-2xl font-medium tracking-tight text-gray-900">
+          Welcome to NomadPi
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Sign in to manage your VPN connections
         </p>
+        <div className="mt-8 space-y-4">
+          <button
+            onClick={signInWithGoogle}
+            className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Continue with Google
+          </button>
+          <button
+            onClick={signInWithGithub}
+            className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Continue with GitHub
+          </button>
+        </div>
       </div>
     </div>
-  )
+  );
 }
