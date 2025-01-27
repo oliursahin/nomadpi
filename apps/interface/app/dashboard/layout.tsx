@@ -2,9 +2,10 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { HomeIcon, ComputerDesktopIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { useSupabase } from '../providers/SupabaseProvider';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: HomeIcon },
@@ -17,17 +18,26 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, signOut } = useAuth();
+  const { user, isLoading } = useSupabase();
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!isLoading && !user && !isRedirecting) {
+      setIsRedirecting(true);
       router.push('/');
     }
-  }, [user, loading, router]);
+  }, [user, isLoading, router, isRedirecting]);
 
-  if (loading || !user) {
-    return null;
+  if (isLoading || isRedirecting || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-sm text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -58,7 +68,10 @@ export default function DashboardLayout({
                 </li>
                 <li className="mt-auto">
                   <button
-                    onClick={() => signOut()}
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      router.push('/');
+                    }}
                     className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-blue-600"
                   >
                     Sign out

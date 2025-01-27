@@ -19,25 +19,48 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setIsLoading(false);
+    let mounted = true;
+
+    const getInitialUser = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (mounted) {
+          if (error) {
+            console.error('Error getting session:', error.message);
+            setUser(null);
+          } else {
+            setUser(session?.user ?? null);
+          }
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error in getInitialUser:', error);
+        if (mounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
     };
 
-    // Get initial user
-    getUser();
+    // Get initial session
+    getInitialUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+        }
+      }
+    );
 
+    // Cleanup
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, []);
 
   return (
     <SupabaseContext.Provider value={{ user, isLoading }}>

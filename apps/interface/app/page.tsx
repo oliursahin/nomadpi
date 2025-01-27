@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useSupabase } from './providers/SupabaseProvider';
 import EmailSignIn from '@/components/auth/EmailSignIn';
@@ -9,13 +9,15 @@ import EmailSignIn from '@/components/auth/EmailSignIn';
 export default function Home() {
   const router = useRouter();
   const { user, isLoading } = useSupabase();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    if (!isLoading && user) {
+    if (!isLoading && user && !isRedirecting) {
+      setIsRedirecting(true);
       router.push('/dashboard');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, isRedirecting]);
 
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
@@ -36,16 +38,14 @@ export default function Home() {
   };
 
   // Show loading state while checking authentication
-  if (isLoading) {
+  if (isLoading || isRedirecting) {
     return (
       <div className="min-h-screen flex flex-col justify-center bg-white">
         <div className="sm:mx-auto sm:w-full sm:max-w-md px-6">
-          <h2 className="text-center text-2xl font-medium tracking-tight text-gray-900">
-            Welcome to NomadPi
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Loading...
-          </p>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-sm text-gray-600">Loading...</p>
+          </div>
         </div>
       </div>
     );
