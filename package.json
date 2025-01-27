@@ -7,14 +7,14 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"cd apps/api && bun dev\" \"cd apps/web && bun dev\"",
+    "dev": "concurrently \"cd apps/server && bun dev\" \"cd apps/interface && bun dev\"",
     "build": "bun run shared:build && bun run --parallel '/apps/*/build'",
     "lint": "bun run --parallel '/apps/*/lint'",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
     "shared:build": "cd packages/shared && bun run build",
     "shared:dev": "cd packages/shared && bun run dev",
-    "api:dev": "cd apps/api && bun dev",
-    "web:dev": "cd apps/web && bun dev"
+    "server:dev": "cd apps/server && bun dev",
+    "interface:dev": "cd apps/interface && bun dev"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

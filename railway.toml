@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+buildCommand = "bun run build"
+
+[deploy]
+startCommand = "cd apps/interface && bun start"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+
+[env]
+NODE_ENV = "production"
