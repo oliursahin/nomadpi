@@ -36,10 +36,13 @@ deviceRouter.get('/', auth, async (req, res) => {
 deviceRouter.post('/', auth, async (req, res) => {
   try {
     const { name } = req.body;
-    
+
+    // Sanitize the name to prevent command injection
+    const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, '');
+
     // Create device in database
     const device = new DeviceModel({
-      name,
+      name: sanitizedName, // Use sanitized name
       user: req.user?.id
     });
     await device.save();
@@ -50,16 +53,17 @@ deviceRouter.post('/', auth, async (req, res) => {
       DocumentName: 'AWS-RunShellScript',
       Parameters: {
         commands: [
-          `sudo wg genkey | sudo tee /etc/wireguard/clients/${name}.key | sudo wg pubkey | sudo tee /etc/wireguard/clients/${name}.key.pub && sudo wg-quick generate-client-config ${name}`
+          // Use sanitized name here to prevent command injection
+          `sudo wg genkey | sudo tee /etc/wireguard/clients/${sanitizedName}.key | sudo wg pubkey | sudo tee /etc/wireguard/clients/${sanitizedName}.key.pub && sudo wg-quick generate-client-config ${sanitizedName}`
         ]
       }
     };
 
     await ssm.sendCommand(command).promise();
-    
+
     // Update device with config status
     device.configGenerated = true;
-    device.configPath = `/etc/wireguard/clients/${name}.conf`;
+    device.configPath = `/etc/wireguard/clients/${sanitizedName}.conf`; // Use sanitized name
     await device.save();
 
     const deviceResponse: Device = {
@@ -84,7 +88,7 @@ deviceRouter.get('/:id/config', auth, async (req, res) => {
       _id: req.params.id,
       user: req.user?.id
     });
-    
+
     if (!device) {
       return res.status(404).json({ error: 'Device not found' });
     }
@@ -103,7 +107,7 @@ deviceRouter.get('/:id/config', auth, async (req, res) => {
     };
 
     const response = await ssm.sendCommand(command).promise();
-    
+
     // Wait for command to complete and get output
     const output = await new Promise((resolve, reject) => {
       setTimeout(async () => {
