@@ -4,7 +4,22 @@ import VPNConnection from '../models/VPNConnection';
 // Get all VPN connections for a user
 export const getUserConnections = async (req: Request, res: Response) => {
   try {
+    // Get the authenticated user's ID.  This assumes an authentication middleware sets req.user
+    const authUserId = req.user && req.user.id; 
+
+    // Ensure there is an authenticated user
+    if (!authUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
     const userId = req.params.userId;
+
+    // Ensure the authenticated user can only access their own connections
+    if (authUserId !== userId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+
     const connections = await VPNConnection.find({ userId }).sort({ connectedAt: -1 });
     res.json(connections);
   } catch (error) {
