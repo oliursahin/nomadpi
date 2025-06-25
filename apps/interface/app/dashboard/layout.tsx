@@ -23,11 +23,13 @@ export default function DashboardLayout({
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !user && !isRedirecting) {
+    // Security fix: Redirect to login if user is null, even if isLoading is false.
+    // This prevents direct access to dashboard routes without authentication.
+    if (!user && !isRedirecting) {
       setIsRedirecting(true);
       router.push('/');
     }
-  }, [user, isLoading, router, isRedirecting]);
+  }, [user, router, isRedirecting]);
 
   if (isLoading || isRedirecting || !user) {
     return (
